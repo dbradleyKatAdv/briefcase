@@ -5,7 +5,7 @@ To be utilized in Veeva CLM presentations.
 - [Veeva-library.js] (https://cdnmc1.vod309.com/clm/release/veeva-library.js)
 
 ## CRM Permissions Requirements
-## 
+## Functionality
 There are two scripts that are pulled in this package. The ``briefcase-engine.js`` is **required** while the ``briefcase-widget.js`` is **optional**.
 
  The ``briefcase-engine.js`` is the code that grabs the local data for presentations and associated key messages. This script should be loaded into your project **before** the briefcase-widget. 
@@ -89,9 +89,27 @@ document.addEventListener('DOMContentLoaded', async (e) => {
 })
 ```
 
-Note: since 
+Note: since the briefcase_widget is dependent on the ``briefcase.data`` be sure to take that into account when calling the scripts. 
 
 ##### Static Briefcase 
+The static briefcase returns a presentation object. It is used in cases where you have one presentation with some slides you require hotspots to. It will be set on the element you want your briefcase appended to within your HTML. This element, should have the attribute ``data-briefcase-static`` and it should be equal to the Presentation Id you require access to. 
 
+For example, if you need access to a presentation  with a Presentation Id :``briefcase_pdfs``, you would have the following markup: 
+```
+<div data-briefcase-static="briefcase_pdfs">
+</div>
+```
+If it can find a presentation id within the data returned from he briefcase-engine, it should return markup within the element that looks like this: 
+```
+<div data-briefcase-static="briefcase_pdfs">
+    <ul class="briefcase-list">
+        <li class="list-item" data-slide="distributionMediaFileName.zip" data-presentation="presentationId">{SlideName}</li>
+    </ul>
+</div>
+```
+If there are any issues with your call or if no available presentations with that presentation Id, the function will stop. 
 ##### Dynamic Briefcase
+The dynamic briefcase code does something very similar to the static briefcase, however it searches the presentation Ids and returns any that include that phrase. 
+
+##### Hotspots
 
