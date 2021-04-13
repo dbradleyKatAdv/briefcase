@@ -80,7 +80,7 @@ In order to implement the ``briefcase-widget.js`` script, you will need to call 
 
 Example of briefcase_widget.init() implementation:
 ```
-document.addEventListener('DOMContentLoaded', async (e) => {
+window.addEventListener('DOMContentLoaded', async (e) => {
     /* Initialize the script to get the data, store it in briefcase.data */
     await briefcase.init();
 
@@ -104,12 +104,37 @@ If it can find a presentation id within the data returned from he briefcase-engi
 <div data-briefcase-static="briefcase_pdfs">
     <ul class="briefcase-list">
         <li class="list-item" data-slide="distributionMediaFileName.zip" data-presentation="presentationId">{SlideName}</li>
+        ...
     </ul>
 </div>
 ```
 If there are any issues with your call or if no available presentations with that presentation Id, the function will stop. 
+
+**Thing to consider:**
+- If you have a list of PDFs in a binder, you can disable `Swipe_vod` and `Navigation_vod` on Key_Message_vod level. This ensures the user cannot swipe between PDF slides. 
+
 ##### Dynamic Briefcase
-The dynamic briefcase code does something very similar to the static briefcase, however it searches the presentation Ids and returns any that include that phrase. 
+The dynamic briefcase code does something very similar to the static briefcase, however it allows you to create a briefcase by passing in a query (it should be a string). There are two required steps to implementation:
+1. **Veeva Vault** - In the associated vault, any presentations you require within your briefcase, add a prefix to the Presentation Id. Example: ```briefcase_asset:presentationId```
+    - If you require a specific order, you can add a number to the end of the prefix. This will allow you to set the index. Example: `briefcase_asset_1:presentationId`. If you have some with number and not others the ones without numbers will be set after the numbered items. 
 
+2. **Code** - Within your HTML, add a ```data-briefcase-dynamic``` attribute. This should equal the prefix value mentioned previously. If no value is found a warning will show in the console and no briefcase will be created. 
+
+It is important to note that the dynamic briefcase will always add hotspots to the **first** slide in a presentation 
+
+@TODO Specific briefcase id format (maybe validation?) 
+
+Example markup: 
+```
+<div data-briefcase-dynamic="briefcase_asset">
+     <ul class="briefcase-list">
+        <li class="list-item" data-slide="distributionMediaFileName.zip" data-presentation="briefcase_asset_1:presentationId">{SlideName}</li>
+        ...
+    </ul>
+</div>
+```
+
+**Things to consider:**
+- Take care in naming your prefix value, this should be mutually agreed upon with the client.
 ##### Hotspots
-
+Hotspots 
