@@ -4,7 +4,6 @@ To be utilized in Veeva CLM presentations.
 ## Dependencies
 - [Veeva-library.js] (https://cdnmc1.vod309.com/clm/release/veeva-library.js)
 
-## CRM Permissions Requirements
 ## Functionality
 There are two scripts that are pulled in this package. The ``briefcase-engine.js`` is **required** while the ``briefcase-widget.js`` is **optional**.
 
@@ -120,7 +119,7 @@ The dynamic briefcase code does something very similar to the static briefcase, 
 
 2. **Code** - Within your HTML, add a ```data-briefcase-dynamic``` attribute. This should equal the prefix value mentioned previously. If no value is found a warning will show in the console and no briefcase will be created. 
 
-It is important to note that the dynamic briefcase will always add hotspots to the **first** slide in a presentation 
+It is important to note that the dynamic briefcase will always add hotspots to the **first slide** in a presentation.
 
 @TODO Specific briefcase id format (maybe validation?) 
 
@@ -137,4 +136,52 @@ Example markup:
 **Things to consider:**
 - Take care in naming your prefix value, this should be mutually agreed upon with the client.
 ##### Hotspots
-Hotspots 
+This functionality takes two parameters:
+1. Presentation ID
+    - Use ``data-presentation``
+2. Key Message Name 
+    - Use ``data-slide-name``
+
+It will dynamically insert the required data based on the above query values. It will then create a tappable hotspot anywhere within your presentation. If successful in the queries, it will add a ``data-slide`` attribute that is the media file required for the veeva gotoSlide function to work. If the presentation id does not exist, or the data-slide-name does not exist, a warning should be output in your console and nothing will get appeneded to your element. 
+
+Example Markup: 
+```
+<div data-presentation="presentationId" data-slide-name="keyMessageName" data-slide="keyMessageZipName.zip">
+</div>
+```
+
+## Requirements
+
+### Device Requirements
+These scripts have been tested on an iPad Pro iOS v12.x-v14.x
+
+**Important for Windows:** If developing for CLM content on a windows device, you will not have access to local storage. The ``briefcase-engine`` will fire on each slide load and set the ``briefcase.data`` variable with the data required for the widget to run. 
+
+### CRM Permission Requirements
+In order for all queries to work as needed, you will need to ensure that both your CLM end-user has the appropriate permissions. This is a detailed list of all objects and fields these scripts rely on to function successfully. 
+| **Object Name**               | **Field Name**          | **Description**                                                                                                     | **Permissions (Read, Write)** |
+|-------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| Clm_Presentation_vod__c       | Name                    | Name of CLM Presentation set in Veeva Vault (Binder Name)                                                           | Read                          |
+|                               | Presentation_Id_vod__c  | Presentation Id set in Veeva Vault                                                                                  | Read                          |
+|                               | Id                      | CRM Id created within Salesforce, not referenced in Veeva Vault                                                     | Read                          |
+|                               | Status_vod__c           | Status of current presentation.  **Note: Draft in vault gets converted to Staged status once in Salesforce**        | Read                          |
+|                               |                         |                                                                                                                     |                               |
+| Clm_Presentation_Slide_vod__c | Name                    | MAY NOT BE NEEDED - CONFIRM                                                                                         |                               |
+|                               | Id                      | CRM Id created within Salesforce, not referenced in Veeva Vault                                                     | Read                          |
+|                               | Key_Message_vod__c      | Contains the Id of the associated Key_Message_vod__c.Id field. This is not referenced in Veeva Vault.               | Read                          |
+|                               | Clm_Presentation_vod__c | Contains the Id of the associated Clm_Presentation_vod__c.Id. This is not referenced in Veeva Vault                 | Read                          |
+|                               | Display_Order_vod__c    | Order in which the Slide appears in the associated Clm_Presentation_vod__c binder.                                  | Read                          |
+|                               |                         |                                                                                                                     |                               |
+| Key_Message_vod__c            | Name                    | Name of the slide set in Veeva Vault                                                                                | Read                          |
+|                               | Id                      | Id set in Salesforce, associates to the Clm_Presentation_Slide_vod__c.Key_Message_vod__c field.                     | Read                          |
+|                               | Vault_DNS_vod__c        | The URL for the associated Veeva Vault, helpful for debugging what is getting pulled into your data.                | Read                          |
+|                               | Slide_Version_vod__c    | Version of the slide being pulled in                                                                                | Read                          |
+|                               | Status_vod__c           | Status of the slide being pulled in (this should **always** match the Clm_Presentation_vod__c.Status_vod__c field). | Read                          |
+|                               | Media_File_name_vod__c  | File name required for the Veeva library API gotoSlide call. See Veeva CLM API Documentation here                   | Read                          |
+
+
+## Contributing
+
+
+## Log
+
