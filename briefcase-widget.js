@@ -21,87 +21,56 @@ const briefcase_widget = {
   generateDynamicBriefcase: async allPresentationData => {
     const attributeVal = 'data-briefcase-dynamic'; // returns an array of objects
     // checks if there is a dynamic attribute on slide and initializes the main functionalitty for the dynamic briefcase.
-
     if (document.querySelector(`[${attributeVal}]`)) {
-      // returns an array of strings
-      // finds the data-briefcase-dynamic attribute and pulls the value and formats as to what is required. 
-      const dynamicBriefcaseElements = document.querySelectorAll(`[${attributeVal}]`);
+    // returns an array of strings
+    // finds the data-briefcase-dynamic attribute and pulls the value and formats as to what is required. 
+      const dynamicBriefcaseElements = document.querySelector(`[${attributeVal}]`) ;
 
-      if (dynamicBriefcaseElements[0].getAttribute('data-briefcase-dynamic') != "") {
-        const dynamicBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(dynamicBriefcaseElements, attributeVal); // returns an array of objects
-        // compares all presentationData to the query and returns the array of required presentation objects
+      const dynamicBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(dynamicBriefcaseElements, attributeVal); 
+      // returns an array of objects
+      // compares all presentationData to the query and returns the array of required presentation objects
 
-        const dynamicBriefcase = await briefcase_widget.briefcaseCustomSearch(dynamicBriefcaseQuery, allPresentationData); // sorts the items based off of the presentation id number. If it doesn't have a number it should be returned as one of the last in the array. 
+      const dynamicBriefcase = await briefcase_widget.briefcaseCustomSearch(dynamicBriefcaseQuery, allPresentationData); // sorts the items based off of the presentation id number. If it doesn't have a number it should be returned as one of the last in the array. 
 
-        if (dynamicBriefcase != null) {
-          const dynamicBriefcaseData = await briefcase_widget.sortBriefcaseItems(dynamicBriefcase);
-          return await briefcase_widget.createBriefcaseWidget(dynamicBriefcaseData, attributeVal); // using statiic data from previous call, generate widget
-        } else {
-          return console.warn(`${attributeVal} doesn't return any results.`);
-        }
-      } else {
-        return console.warn(`${attributeVal} does not have a value.`);
+      if (dynamicBriefcase.length == 0) {
+        // @ERROR here
+        return new Error(`Failed to get presentation ${dynamicBriefcaseQuery}`)
       }
+
+      const dynamicBriefcaseData = await briefcase_widget.sortBriefcaseItems(dynamicBriefcase);
+
+      return await briefcase_widget.createBriefcaseWidget(dynamicBriefcaseData, attributeVal); // using statiic data from previous call, generate widget
     }
   },
   generateStaticBriefcase: async allPresentationData => {
     const attributeVal = 'data-briefcase-static';
 
     if (document.querySelector(`[${attributeVal}]`)) {
-      const staticBriefcaseElements = document.querySelectorAll(`[${attributeVal}]`); // returns array
+      const staticBriefcaseElements = document.querySelector(`[${attributeVal}]`).getAttribute(`[${attributeVal}]`) != "" ? document.querySelector(`[${attributeVal}]`) : null;
+      // returns array
       // required for static briefcase to work. Grabs the query terms, and compares them to creates an array of strings. 
 
-      const staticBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(staticBriefcaseElements, attributeVal); // returns array of objects
+      const staticBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(staticBriefcaseElements, attributeVal); 
+      // returns array of objects
       // takes in the term array from the previous call and compares them to the presentation data. Returns an array of matching presentation objects. 
-
-      const staticBriefcaseData = await briefcase_widget.briefcaseCustomSearch(staticBriefcaseQuery, allPresentationData);
-
-      if (staticBriefcaseData != null) {
-        return briefcase_widget.createBriefcaseWidget(staticBriefcaseData, attributeVal);
-      } else {
-        return console.warn(`${attributeVal} doesn't return any results.`);
-      }
+      const validPresentations = await briefcase_widget.validateData(staticBriefcaseQuery, allPresentationData, "presentationId");
+      return briefcase_widget.createStaticBriefcaseWidget(validPresentations, attributeVal);
     }
   },
   generateBriefcaseQuery: async (briefcaseElements, attributeName) => {
-    // returns an array of strings
-    // grabs dynamic briefcase search query string and returns it as an array
-    for (let index = 0; index < briefcaseElements.length; index++) {
-      return [briefcaseElements[index].getAttribute(attributeName)];
+      // returns an array of strings
+      // grabs dynamic briefcase search query string and returns it as an array
+    if(briefcaseElements.getAttribute(attributeName) === "") {
+      // @ERROR
+      console.warn(`${attributeName} does not have a value`)
     }
+    return briefcaseElements.getAttribute(attributeName);
   },
-  briefcaseCustomSearch: (termArray, allPresentations) => {
+  briefcaseCustomSearch: (termValue, allPresentationData) => {
     // returns an array of presentation objects matching the term defined in the HTML
-    const requiredPresentations = [];
-    termArray.forEach(term => {
-      const searchedId = briefcase_widget.search(term, allPresentations);
-      requiredPresentations.push(searchedId);
-    });
-
-    if (requiredPresentations[0] === undefined) {
-      console.log(new Error(`No presentations found matching ${termArray[0]}`));
-      return null;
-    } else {
-      return requiredPresentations[0];
-    }
-  },
-  search: (term, presentations) => {
-    // returns an array of objects
-    // takes the turn and compares it to the presentations. Pushes each value to an array
-    const searchArray = [];
-    presentations.filter(value => {
-      if (value.presentationId.includes(term)) {
-        searchArray.push(value);
-      }
-    }); // returns an array of objects
-    // filters out all duplicates
-
-    if (searchArray.length == 0) {
-      return console.log(new Error(`No presentationIds match: ${term}`));
-    }
-
-    var cleanData = briefcase_widget.cleanArray(searchArray);
-    return cleanData;
+    return allPresentationData.filter((presentations) => {
+        return presentations.presentationId.includes(termValue);
+    })
   },
   cleanArray: menuData => {
     // returns as an array of objects
@@ -111,35 +80,27 @@ const briefcase_widget = {
     });
   },
   createStaticBriefcaseWidget: menuQuery => {
-    const element = document.querySelectorAll('[data-briefcase-static]');
-    element.forEach(menu => {
-      if (menuQuery.length == 1) {
-        const list = document.createElement('ul');
-        menu.appendChild(list);
-        list.classList.add('briefcase-list');
-        menuQuery.forEach(presentation => {
-          presentation.keyMessages.forEach(item => {
-            const listItem = document.createElement('li');
-            listItem.classList.add('list-item');
-            const listText = document.createTextNode(item.keyMessageName);
-            listItem.setAttribute('data-slide', item.mediaFileName);
-            listItem.setAttribute('data-presentation', presentation.presentationId);
-            listItem.append(listText);
-            list.append(listItem);
-            document.addEventListener('touchstart', e => {
-              if (e.target.classList.contains('list-item')) {
-                const slidePresentation = e.target.getAttribute('data-presentation'),
-                      slidePath = e.target.getAttribute('data-slide');
-                console.log(`Presentation ${slidePresentation}`);
-                console.log(`Slide: ${slidePath}`);
-                com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-              }
-
-              ;
-            });
-          });
-        });
-      }
+    const element = document.querySelector('[data-briefcase-static]');
+    const list = document.createElement('ul');
+    element.appendChild(list);
+    list.classList.add('briefcase-list');
+    menuQuery.keyMessages.forEach(keyMessage => {
+      const listItem = document.createElement('li');
+      listItem.classList.add('list-item');
+      const listText = document.createTextNode(keyMessage.keyMessageName);
+      listItem.setAttribute('data-slide', keyMessage.mediaFileName);
+      listItem.setAttribute('data-presentation', menuQuery.presentationId);
+      listItem.append(listText);
+      list.append(listItem);
+      document.addEventListener('touchstart', e => {
+        if (e.target.classList.contains('list-item')) {
+          const slidePresentation = e.target.getAttribute('data-presentation'),
+                slidePath = e.target.getAttribute('data-slide');
+          console.log(`Presentation ${slidePresentation}`);
+          console.log(`Slide: ${slidePath}`);
+          com.veeva.clm.gotoSlide(slidePath, slidePresentation);
+        };
+      });
     });
   },
   createBriefcaseWidget: async (briefcaseItems, briefcaseType) => {
