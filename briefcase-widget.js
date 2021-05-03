@@ -21,24 +21,22 @@ const briefcase_widget = {
   generateDynamicBriefcase: async allPresentationData => {
     const attributeVal = 'data-briefcase-dynamic'; // returns an array of objects
     // checks if there is a dynamic attribute on slide and initializes the main functionalitty for the dynamic briefcase.
-    if (document.querySelector(`[${attributeVal}]`)) {
-    // returns an array of strings
-    // finds the data-briefcase-dynamic attribute and pulls the value and formats as to what is required. 
-      const dynamicBriefcaseElements = document.querySelector(`[${attributeVal}]`) ;
 
-      const dynamicBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(dynamicBriefcaseElements, attributeVal); 
-      // returns an array of objects
+    if (document.querySelector(`[${attributeVal}]`)) {
+      // returns an array of strings
+      // finds the data-briefcase-dynamic attribute and pulls the value and formats as to what is required. 
+      const dynamicBriefcaseElements = document.querySelector(`[${attributeVal}]`);
+      const dynamicBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(dynamicBriefcaseElements, attributeVal); // returns an array of objects
       // compares all presentationData to the query and returns the array of required presentation objects
 
       const dynamicBriefcase = await briefcase_widget.briefcaseCustomSearch(dynamicBriefcaseQuery, allPresentationData); // sorts the items based off of the presentation id number. If it doesn't have a number it should be returned as one of the last in the array. 
 
       if (dynamicBriefcase.length == 0) {
-        // @ERROR here
-        return new Error(`Failed to get presentation ${dynamicBriefcaseQuery}`)
+        briefcase.log("err", `There was an error building the dynamic briefcase. No presentations found with presentation ID ${dynamicBriefcaseQuery}.`);
+        return;
       }
 
       const dynamicBriefcaseData = await briefcase_widget.sortBriefcaseItems(dynamicBriefcase);
-
       return await briefcase_widget.createBriefcaseWidget(dynamicBriefcaseData, attributeVal); // using statiic data from previous call, generate widget
     }
   },
@@ -46,31 +44,36 @@ const briefcase_widget = {
     const attributeVal = 'data-briefcase-static';
 
     if (document.querySelector(`[${attributeVal}]`)) {
-      const staticBriefcaseElements = document.querySelector(`[${attributeVal}]`).getAttribute(`[${attributeVal}]`) != "" ? document.querySelector(`[${attributeVal}]`) : null;
-      // returns array
+      const staticBriefcaseElements = document.querySelector(`[${attributeVal}]`).getAttribute(`[${attributeVal}]`) != "" ? document.querySelector(`[${attributeVal}]`) : null; // returns array
       // required for static briefcase to work. Grabs the query terms, and compares them to creates an array of strings. 
 
-      const staticBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(staticBriefcaseElements, attributeVal); 
-      // returns array of objects
+      const staticBriefcaseQuery = await briefcase_widget.generateBriefcaseQuery(staticBriefcaseElements, attributeVal); // returns array of objects
       // takes in the term array from the previous call and compares them to the presentation data. Returns an array of matching presentation objects. 
+
       const validPresentations = await briefcase_widget.validateData(staticBriefcaseQuery, allPresentationData, "presentationId");
+    
+      if (validPresentations == undefined) {
+        briefcase.log("err", `There was an error building the static briefcase. No presentations found with presentation ID ${staticBriefcaseQuery}.`);
+        return;
+      }
       return briefcase_widget.createStaticBriefcaseWidget(validPresentations, attributeVal);
+
     }
   },
   generateBriefcaseQuery: async (briefcaseElements, attributeName) => {
-      // returns an array of strings
-      // grabs dynamic briefcase search query string and returns it as an array
-    if(briefcaseElements.getAttribute(attributeName) === "") {
-      // @ERROR
-      console.warn(`${attributeName} does not have a value`)
+    // returns an array of strings
+    // grabs dynamic briefcase search query string and returns it as an array
+    if (briefcaseElements.getAttribute(attributeName) === "") {
+      briefcase.log("warn", `${attributeName} does not have a value`)
     }
+
     return briefcaseElements.getAttribute(attributeName);
   },
   briefcaseCustomSearch: (termValue, allPresentationData) => {
     // returns an array of presentation objects matching the term defined in the HTML
-    return allPresentationData.filter((presentations) => {
-        return presentations.presentationId.includes(termValue);
-    })
+    return allPresentationData.filter(presentations => {
+      return presentations.presentationId.includes(termValue);
+    });
   },
   cleanArray: menuData => {
     // returns as an array of objects
@@ -80,6 +83,7 @@ const briefcase_widget = {
     });
   },
   createStaticBriefcaseWidget: menuQuery => {
+  
     const element = document.querySelector('[data-briefcase-static]');
     const list = document.createElement('ul');
     element.appendChild(list);
@@ -128,9 +132,7 @@ const briefcase_widget = {
                 console.log(`Presentation ${slidePresentation}`);
                 console.log(`Slide: ${slidePath}`);
                 com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-              }
-
-              ;
+              };
             });
           });
         } else {
@@ -152,9 +154,7 @@ const briefcase_widget = {
               console.log(`Presentation ${slidePresentation}`);
               console.log(`Slide: ${slidePath}`);
               com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-            }
-
-            ;
+            };
           });
         }
       });
@@ -182,37 +182,42 @@ const briefcase_widget = {
     // value = String
     // array = Array to compare against
     // key = String, Key in the array we are looking to compare 
-
     const isValid = array.find(item => {
       return item[key] === value;
     });
-    if(isValid != undefined) {
+
+    if (isValid != undefined) {
       return isValid;
     } else {
-      throw new Error(`Cannot find ${key} matching ${value}`);
+      briefcase.log("warn", `Cannot find ${key} matching ${value}`);
+      return;
     }
   },
-  logs: () => {
-
-  },
+  
   generateSlideHotspot: async allPresentationData => {
     // Gets all elements that will need to have a hotspot created
-    const hotspotElements = document.querySelectorAll('[data-slide-name]');
-    // for each hotspot we will want to validate html values
-    hotspotElements.forEach(async (hotspot) => {
+    const hotspotElements = document.querySelectorAll('[data-slide-name]'); // for each hotspot we will want to validate html values
+
+    hotspotElements.forEach(async hotspot => {
       // save attribute values for the hotspot in variables
       const slideName = hotspot.getAttribute('data-slide-name'),
-            presentationId = hotspot.getAttribute('data-presentation');
+            presentationId = hotspot.getAttribute('data-presentation'); // start with the presentation, and call the validateData function. Pass in the id we are looking for (from HTML), all presentation data, and the 'key' of data we need to compare against. This will return the presentation object required for the hotspot to be created.
 
-      // start with the presentation, and call the validateData function. Pass in the id we are looking for (from HTML), all presentation data, and the 'key' of data we need to compare against. This will return the presentation object required for the hotspot to be created.
-      const validPresentations = await briefcase_widget.validateData(presentationId, allPresentationData, "presentationId");
+      const validPresentations = await briefcase_widget.validateData(presentationId, allPresentationData, "presentationId"); // using ONLY the valid presentations from above, validate slide name using the same function as before. This will return key message objects that are valid only. Will throw error if name does not exist. 
+      if(validPresentations == undefined) {
+        briefcase.log("err", `Error building hotspot with presentation Id: ${presentationId}`);
+        return;
+      }
 
-      // using ONLY the valid presentations from above, validate slide name using the same function as before. This will return key message objects that are valid only. Will throw error if name does not exist. 
-      const validSlide = await briefcase_widget.validateData(slideName, validPresentations.keyMessages, "keyMessageName");
-      // Any valid slides, will grab the media file name and set the attribute to generate the hotspot functionality. 
-      hotspot.setAttribute('data-slide', validSlide.mediaFileName);
+      const validSlide = await briefcase_widget.validateData(slideName, validPresentations.keyMessages, "keyMessageName"); // Any valid slides, will grab the media file name and set the attribute to generate the hotspot functionality. 
+      if(validSlide == undefined) {
+        briefcase.log("err", `Error building hotspot with slide name: ${slideName} - presentation Id: ${presentationId}`);
+        return;
+      }
 
-      // to be integrated into the hotspot.js file already in boilerplate.
+
+      hotspot.setAttribute('data-slide', validSlide.mediaFileName); // to be integrated into the hotspot.js file already in boilerplate.
+
       document.addEventListener('touchstart', e => {
         if (e.target.hasAttribute('data-slide-name')) {
           const slidePresentation = e.target.getAttribute('data-presentation'),

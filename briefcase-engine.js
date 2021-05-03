@@ -49,6 +49,7 @@ const briefcase = {
       console.log(new Error("Failed to get presentation status", statusData));
     } // save the data in a global variable (on the briefcase object) so that it is available in all functions after
 
+
     return currentPresentationData;
   },
   getAllPresentationData: async currentPresentationData => {
@@ -190,6 +191,22 @@ const briefcase = {
     // returns an array of objects
     // pulls and parses the data from local storage. Data is coming from briefcase engine. 
     return JSON.parse(localStorage.getItem('presentationData'));
+  },
+  log: (logType, message) => {
+    switch (logType) {
+      case "log":
+        console.log(message)
+        break;
+      case "warn":
+        console.warn(message);
+        break;
+      case 'err':
+        console.error(message);
+        break;
+      default:
+        console.log("there was an error")
+        break;
+    }
   },
 
   /* 
