@@ -51,20 +51,20 @@ const briefcase_widget = {
       // takes in the term array from the previous call and compares them to the presentation data. Returns an array of matching presentation objects. 
 
       const validPresentations = await briefcase_widget.validateData(staticBriefcaseQuery, allPresentationData, "presentationId");
-    
+
       if (validPresentations == undefined) {
         briefcase.log("err", `There was an error building the static briefcase. No presentations found with presentation ID ${staticBriefcaseQuery}.`);
         return;
       }
-      return briefcase_widget.createStaticBriefcaseWidget(validPresentations, attributeVal);
 
+      return briefcase_widget.createStaticBriefcaseWidget(validPresentations, attributeVal);
     }
   },
   generateBriefcaseQuery: async (briefcaseElements, attributeName) => {
     // returns an array of strings
     // grabs dynamic briefcase search query string and returns it as an array
     if (briefcaseElements.getAttribute(attributeName) === "") {
-      briefcase.log("warn", `${attributeName} does not have a value`)
+      briefcase.log("warn", `${attributeName} does not have a value`);
     }
 
     return briefcaseElements.getAttribute(attributeName);
@@ -83,7 +83,6 @@ const briefcase_widget = {
     });
   },
   createStaticBriefcaseWidget: menuQuery => {
-  
     const element = document.querySelector('[data-briefcase-static]');
     const list = document.createElement('ul');
     element.appendChild(list);
@@ -96,15 +95,15 @@ const briefcase_widget = {
       listItem.setAttribute('data-presentation', menuQuery.presentationId);
       listItem.append(listText);
       list.append(listItem);
-      document.addEventListener('touchstart', e => {
-        if (e.target.classList.contains('list-item')) {
-          const slidePresentation = e.target.getAttribute('data-presentation'),
-                slidePath = e.target.getAttribute('data-slide');
-          console.log(`Presentation ${slidePresentation}`);
-          console.log(`Slide: ${slidePath}`);
-          com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-        };
-      });
+      $(listItem).hammer().on("tap", (e) => {
+        const slidePresentation = e.target.getAttribute('data-presentation'),
+        slidePath = e.target.getAttribute('data-slide');
+        briefcase.log("log", {
+          "Presentation Name": slidePresentation,
+          "Slide Path": slidePath
+        });
+        com.veeva.clm.gotoSlide(slidePath, slidePresentation);
+      })
     });
   },
   createBriefcaseWidget: async (briefcaseItems, briefcaseType) => {
@@ -125,15 +124,15 @@ const briefcase_widget = {
             listItem.setAttribute('data-presentation', briefcaseItem.presentationId);
             listItem.append(listText);
             list.append(listItem);
-            document.addEventListener('touchstart', e => {
-              if (e.target.classList.contains('list-item')) {
-                const slidePresentation = e.target.getAttribute('data-presentation'),
-                      slidePath = e.target.getAttribute('data-slide');
-                console.log(`Presentation ${slidePresentation}`);
-                console.log(`Slide: ${slidePath}`);
-                com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-              };
-            });
+            $(listItem).hammer().on('tap', (e) => {
+              const slidePresentation = e.target.getAttribute('data-presentation'),
+              slidePath = e.target.getAttribute('data-slide');
+              briefcase.log("log", {
+                "Presentation Name": slidePresentation,
+                "Slide Path": slidePath
+              });
+              com.veeva.clm.gotoSlide(slidePath, slidePresentation);
+            })
           });
         } else {
           const listItem = document.createElement('li');
@@ -147,15 +146,15 @@ const briefcase_widget = {
           listItem.setAttribute('data-presentation', briefcaseItem.presentationId);
           listItem.append(listText);
           list.append(listItem);
-          document.addEventListener('touchstart', e => {
-            if (e.target.classList.contains('list-item')) {
-              const slidePresentation = e.target.getAttribute('data-presentation'),
-                    slidePath = e.target.getAttribute('data-slide');
-              console.log(`Presentation ${slidePresentation}`);
-              console.log(`Slide: ${slidePath}`);
-              com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-            };
-          });
+          $(listItem).hammer().on('tap', (e) => {
+            const slidePresentation = e.target.getAttribute('data-presentation'),
+            slidePath = e.target.getAttribute('data-slide');
+            briefcase.log("log", {
+              "Presentation Name": slidePresentation,
+              "Slide Path": slidePath
+            });
+            com.veeva.clm.gotoSlide(slidePath, slidePresentation);
+          })
         }
       });
     });
@@ -193,7 +192,6 @@ const briefcase_widget = {
       return;
     }
   },
-  
   generateSlideHotspot: async allPresentationData => {
     // Gets all elements that will need to have a hotspot created
     const hotspotElements = document.querySelectorAll('[data-slide-name]'); // for each hotspot we will want to validate html values
@@ -204,27 +202,35 @@ const briefcase_widget = {
             presentationId = hotspot.getAttribute('data-presentation'); // start with the presentation, and call the validateData function. Pass in the id we are looking for (from HTML), all presentation data, and the 'key' of data we need to compare against. This will return the presentation object required for the hotspot to be created.
 
       const validPresentations = await briefcase_widget.validateData(presentationId, allPresentationData, "presentationId"); // using ONLY the valid presentations from above, validate slide name using the same function as before. This will return key message objects that are valid only. Will throw error if name does not exist. 
-      if(validPresentations == undefined) {
-        briefcase.log("err", `Error building hotspot with presentation Id: ${presentationId}`);
-        return;
+
+      if (validPresentations == undefined) {
+        try {
+          briefcase.log("err", `Error building hotspot with presentation Id: ${presentationId}`);
+          return;
+        } catch (e) {
+          briefcase.log('log', e.stack);
+        }
       }
 
       const validSlide = await briefcase_widget.validateData(slideName, validPresentations.keyMessages, "keyMessageName"); // Any valid slides, will grab the media file name and set the attribute to generate the hotspot functionality. 
-      if(validSlide == undefined) {
+
+      if (validSlide == undefined) {
         briefcase.log("err", `Error building hotspot with slide name: ${slideName} - presentation Id: ${presentationId}`);
         return;
       }
 
-
-      hotspot.setAttribute('data-slide', validSlide.mediaFileName); // to be integrated into the hotspot.js file already in boilerplate.
-
-      document.addEventListener('touchstart', e => {
-        if (e.target.hasAttribute('data-slide-name')) {
-          const slidePresentation = e.target.getAttribute('data-presentation'),
-                slidePath = e.target.getAttribute('data-slide');
-          com.veeva.clm.gotoSlide(slidePath, slidePresentation);
-        };
-      });
+      hotspot.setAttribute('data-slide', validSlide.mediaFileName); 
+      // hotspot.js shouldn't be used if using this script
+      $(hotspot).hammer().on("tap", (e) => {
+        const slidePresentation = e.target.getAttribute('data-presentation'),
+        slidePath = e.target.getAttribute('data-slide');
+        briefcase.log("log", {
+          "Presentation Name": slidePresentation,
+          "Slide Name": e.target.getAttribute('data-slide-name'),
+          "Slide Path": slidePath
+        });
+        com.veeva.clm.gotoSlide(slidePath, slidePresentation);
+      })
     });
   }
 };

@@ -1,0 +1,19 @@
+{
+  "name": "briefcase",
+  "version": "1.0.0",
+  "description": "Veeva briefcase script",
+  "main": "briefcase-engine.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dbradleyKatAdv/briefcase.git"
+  },
+  "author": "Dustin Bradley",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dbradleyKatAdv/briefcase/issues"
+  },
+  "homepage": "https://github.com/dbradleyKatAdv/briefcase#readme"
+}

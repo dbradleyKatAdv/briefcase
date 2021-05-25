@@ -1,5 +1,7 @@
 const briefcase = {
-  currentPresentationData: undefined,
+  // holds the status and product for the current presentation. Required elements for all other calls
+  currentPresentationData: "",
+  // holds all data, as a variable to grab if not from local storage
   data: null,
   // ****VEEVA API HELPER FUNCTIONS*** //
   queryRecordHelper: (objectName, fields, whereClause, sortClause, limit) => {
@@ -8,7 +10,7 @@ const briefcase = {
         if (result.success == true) {
           resolve(result);
         } else {
-          reject(new Error(`Issue with API call to object ${objectName}, for ${fields}`));
+          reject(briefcase.log('throwErr', `Issue with API call to object ${objectName}, for ${fields}. ErrorMessage: result.message`))
         }
       });
     });
@@ -19,7 +21,7 @@ const briefcase = {
         if (result.success == true) {
           resolve(result);
         } else {
-          reject(new Error(`Issue with API call to object ${objectName}, for ${fields}`));
+          reject(briefcase.log('throwErr', `Issue with API call to object ${objectName}, for ${fields}.  Error: ${result.message}`));
         }
       });
     });
@@ -30,26 +32,22 @@ const briefcase = {
     const currentPresentationData = {
       "status": "",
       "product": ""
-    }; // Gets presentation product, to ensure assets are all the same. Allows you to use it in all API call WHERE cases later on
+    }; 
+    // Gets presentation product, to ensure assets are all the same. Allows you to use it in all API call WHERE cases later on
 
     const productData = await briefcase.queryCurrentObjectHelper("Presentation", "Product_vod__c"); // if API call was a success, save the data in the above object
-
     if (productData.success == true) {
       currentPresentationData.product = productData.Presentation.Product_vod__c;
     } else {
-      console.log(new Error("Failed to get presentation product", productData));
+      briefcase.log('throwErr', `Failed to get presentation product: ${productData}. Error: ${result.message}`)
     } // Check to see status of current presentation
 
-
     const statusData = await briefcase.queryCurrentObjectHelper("Presentation", "Status_vod__c"); // if API call was a success, save the data in the above object
-
     if (statusData.success == true) {
       currentPresentationData.status = statusData.Presentation.Status_vod__c;
     } else {
-      console.log(new Error("Failed to get presentation status", statusData));
-    } // save the data in a global variable (on the briefcase object) so that it is available in all functions after
-
-
+      return briefcase.log('throwErr', `Failed to get presentation status: ${statusData}`);
+    } // save the data in a global variable (on the briefcase object) so    that it is available in all functions after
     return currentPresentationData;
   },
   getAllPresentationData: async currentPresentationData => {
@@ -150,11 +148,8 @@ const briefcase = {
         if (formattedData.presentationId.includes(presentationData[i].Id)) {
           tempArray.push(formattedData);
         }
-      }
-
-      ;
+      };
     }
-
     formattedDataArray.forEach(item => {
       for (let i = 0; i < presentationData.length; i++) {
         if (item.presentationId.includes(presentationData[i].Id)) {
@@ -192,19 +187,25 @@ const briefcase = {
     // pulls and parses the data from local storage. Data is coming from briefcase engine. 
     return JSON.parse(localStorage.getItem('presentationData'));
   },
+  /* All errors should be run through this. emit error or throw error/warning depending on required functionality. */
   log: (logType, message) => {
     switch (logType) {
       case "log":
-        console.log(message)
+        console.log(message); 
         break;
+
       case "warn":
         console.warn(message);
         break;
+
       case 'err':
         console.error(message);
+
         break;
+      case 'throwErr': 
+        throw new Error(message)
       default:
-        console.log("there was an error")
+        console.log("there was an error");
         break;
     }
   },
@@ -226,6 +227,4 @@ const briefcase = {
       briefcase.data = await briefcase.getDataFromLocalStorage();
     }
   }
-}; // make sure it is available to developer, they don't need to know where info is coming from. 
-// Output try/catch
-// lag in data call
+};

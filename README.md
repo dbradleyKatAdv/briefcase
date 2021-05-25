@@ -74,6 +74,8 @@ The ``briefcase-widget.js`` is not a required script, but compliments the ``brie
 
 If you want to create custom functionality, developers can create their own front end widget or functionality by implementing the ``briefcase-engine.js``. This script gives globally available presentation data required for the functionality to work. All available data will be available in ``briefcase.data``.
 
+You cannot use the boilerplate `hotlink.js`, if utilizing the briefcase widget script. They run very similarly so they were fire multiple times, causing issues with the history button functionality.
+
 #### Briefcase Widget Implementation
 In order to implement the ``briefcase-widget.js`` script, you will need to call ``briefcase_widget.init()`` after the briefcase script runs. Here is an example of the briefcase widget implementation:
 
